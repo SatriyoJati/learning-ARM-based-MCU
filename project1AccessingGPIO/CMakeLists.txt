@@ -20,8 +20,8 @@ set(CMAKE_C_EXTENSIONS OFF)
 message(STATUS "CMAKE_TOOLCHAIN_FILE is: ${CMAKE_TOOLCHAIN_FILE}")
 
 set(INCS
-    CMSIS/Device/ST/STM32F1xx/Include
-    CMSIS/Core/Include
+    ../CMSIS/Device/ST/STM32F1xx/Include
+    ../CMSIS/Core/Include
 )
 
 set(SRC_FILES   
