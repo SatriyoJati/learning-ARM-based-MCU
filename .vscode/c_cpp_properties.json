@@ -1,0 +1,41 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "configurationProvider": "ms-vscode.cmake-tools"
+        },
+        {
+            "name": "Arm-cortex-m",
+            "includePath": [
+                "d:/ProjectInteruptCortexM/**",
+                "d:/ProjectInteruptCortexM/ProjectInteruptCortexM/**",
+                "${workspaceFolder}",
+                "${workspaceFolder}/CMSIS/Device/ST/STM32F1xx/**",
+                "${workspaceFolder}/CMSIS/Device/ST/STM32F1xx/Include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "C:\\ST\\STM32CubeCLT_1.19.0\\GNU-tools-for-STM32\\bin\\arm-none-eabi-g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-arm",
+            "mergeConfigurations": false,
+            "recursiveIncludes": {},
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}
