@@ -1,0 +1,103 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug w/ ST-Link",
+            "cwd": "${workspaceFolder}",
+            "executable": "./PROJECT_ARM.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "breakAfterReset": true,
+            "servertype": "stlink",
+            "interface": "swd",
+            "device":"STM32F103CBT6",
+            // "serialNumber": "26006400180000593931574E",
+            "svdFile": "${env:STM32CLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F103.svd",
+            "v1": false,
+            "serverpath": "${env:STM32CLT_PATH}/STLink-gdb-server/bin/ST-LINK_gdbserver.exe",
+            "stm32cubeprogrammer": "C:/Program Files/STMicroelectronics/STM32Cube/STM32CubeProgrammer/bin",
+            "stlinkPath": "${env:STM32CLT_PATH}/STLink-gdb-server/bin/ST-LINK_gdbserver.exe",
+            "armToolchainPath": "${env:STM32CLT_PATH}/GNU-tools-for-STM32/bin",
+            "gdbPath": "${env:STM32CLT_PATH}/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",
+            "showDevDebugOutput": "parsed",
+            "serverArgs": [
+                "-m", "0",
+                "-l", "30",
+                // "-k",
+                "-v",
+                "-s",
+                // "--pend-halt-timeout","10",
+                "--frequency", "4000",
+                "--erase-all",
+            ],
+            // prelaunchTask : Build + Flash
+        },
+        {    
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "stutil",
+            "interface": "swd",
+            "cwd": "${workspaceRoot}",
+            "runToEntryPoint": "main",
+            "executable": "./PROJECT_ARM.elf",
+            "name": "Debug (ST-Util)",
+            "device": "STM32F103CBT6",
+            "svdFile": "${env:STM32CLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F103.svd",
+            "serverpath": "C:/Program Files/STLink/stlink-1.8.0-win32/bin/st-util.exe",
+            "armToolchainPath": "${env:STM32CLT_PATH}/GNU-tools-for-STM32/bin",
+            "v1": false ,
+            "serverArgs": [
+                "-v"
+            ]  
+        },
+
+        {
+            "name": "Attach /w StLink",
+            "cwd": "${workspaceRoot}",
+            "executable": "./PROJECT_ARM.elf",
+            "request": "attach",
+            "type": "cortex-debug",
+            "runToEntryPoint": "_reset",
+            "servertype": "stlink",
+            "interface": "swd",
+            "device":"STM32F103CBT6",
+            "serialNumber": "",
+            "svdFile": "${env:STM32CLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F103.svd",
+            "v1": false,
+            "serverpath": "${env:STM32CLT_PATH}/STLink-gdb-server/bin/ST-LINK_gdbserver.exe",
+            "stm32cubeprogrammer": "${env:STM32CLT_PATH}/STM32CubeProgrammer/bin",
+            "stlinkPath": "${env:STM32CLT_PATH}/STLink-gdb-server/bin/ST-LINK_gdbserver.exe",
+            "armToolchainPath": "${env:STM32CLT_PATH}/GNU-tools-for-STM32/bin",
+            "gdbPath": "${env:STM32CLT_PATH}/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",
+            "serverArgs": [
+                "-m", "0",
+            ]
+        },
+        {
+            "name": "OpenOCD",
+            "cwd": "${workspaceFolder}",
+            "type": "cortex-debug",
+            "executable": "./PROJECT_ARM.elf",
+            "request": "launch",
+            "servertype": "openocd",
+            "serverpath": "C:/ST/STM32CubeIDE_2.0.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.openocd.win32_2.4.300.202509300731/tools/bin/openocd.exe",
+            "configFiles": [
+                "interface/stlink-dap.cfg",
+                "target/stm32f1x.cfg",
+            ],
+            "serverArgs": [
+                "-s","C:/ST/STM32CubeIDE_2.0.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.debug.openocd_2.3.200.202510310951/resources/openocd/st_scripts",
+                "-d3",
+                // "-l openocd_log.txt"
+            ],
+            "device": "STM32F103CBT6",
+            "runToEntryPoint": "main",
+            "svdFile": "${env:STM32CLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F103.svd",
+             "showDevDebugOutput": "raw"
+        }
+    ]
+}
