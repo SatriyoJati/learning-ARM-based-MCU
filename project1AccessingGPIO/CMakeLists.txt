@@ -26,7 +26,7 @@ set(INCS
 
 set(SRC_FILES   
     main.c
-    CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c
+    ../CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c
     )
 
 # Build executable
