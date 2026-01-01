@@ -6,13 +6,13 @@ static inline void spin(volatile uint32_t count) {
   while (count--) (void) 0;
 }
 
-static inline void turnOnLed() {
+static inline void turnOnOboardLed() {
   // active low , so we set BR13 (reset bit port 13) to turn on
   GPIOC->BSRR &= ~(GPIO_BSRR_BS13);
   GPIOC->BSRR |= GPIO_BSRR_BR13;
 }
 
-static inline void turnOffLed() {
+static inline void turnOffOnBoardLed() {
   // active low , so we set BS13 (set bit port 13) to turn off
   GPIOC->BSRR &= ~(GPIO_BSRR_BR13);
   GPIOC->BSRR |= GPIO_BSRR_BS13;
@@ -35,9 +35,9 @@ int main() {
     enablePeripheralClockCMSIS();
     setLedPortOutput();
     while(1){
-      turnOffLed();
+      turnOffOnBoardLed();
       spin(999999);
-      turnOnLed();
+      turnOnOboardLed();
       spin(999999);
     }
     return 0;
