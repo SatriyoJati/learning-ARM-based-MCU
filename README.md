@@ -15,10 +15,15 @@ For compiling I use arm tool chain and the build tool is choose is CMake.
 
 
 SO, Prerequisite to run this code :
-a. make, you have installed make on your pc
-b. CMake
-c. Vscode , installing Cortex Debug Extension
+
+a. `make`, you have installed make on your pc
+
+b. `CMake`
+
+c. `Vscode` , installing `Cortex Debug Extension`
+
 d. Download STM32CubeCLT (SInce we use arm-toolchain and device description from there)
+
 e. Download STM32CubeF1 (bundled software component consisting HAL, CMSIS, RTOS etc.)
 
 
