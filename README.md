@@ -31,22 +31,5 @@ a.  https://mcuoneclipse.com/2021/05/01/visual-studio-code-for-c-c-with-arm-cort
 `project1AccessingGPIO` directory contain the firmware to configuring GPIO as output to turn on and off led , and as input. Used to create manually with the help of CMSIS.
 
 
-## ARM Assembly
-
-
-## Basic Concurrency
-
-### Using Timer
-
-
-## Interupts anc Processor core
-
-## C in Assembly Lang
-
-## Analog Interfacing
-
-## Timers
-
-## Serial Communications
-
-## Direct Memory Access
+## Communication Protocol
+`project4CommunicationProtocol` is about learning comms protocol usually available in stm32 microcontroller, such as SPI, UART. This one I tried to implement SDCard Specification to interface with SDcard using SPI comm protocol.
