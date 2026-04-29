@@ -26,6 +26,8 @@ set(INCS
     queue.h
     spi.h
     uart.h
+    sdcard.h
+    sdcard_spi.h
 )
 
 set(SRC_FILES   
@@ -34,6 +36,8 @@ set(SRC_FILES
     queue.c
     spi.c
     uart.c
+    sdcard.c
+    sdcard_spi.c
     ../CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c
     startup_stm32f103xb.s
     )

@@ -2,6 +2,8 @@
 #include <stm32f101xb.h>
 #include "clk.h"
 #include "spi.h"
+#include "sdcard.h"
+#include "sdcard_spi.h"
 
 volatile uint32_t mticks = 0;
 
@@ -37,16 +39,28 @@ int main() {
     SystemCoreClockUpdate();
     SysTick_Config(SystemCoreClock/1000);
     init_led_gpio();
-    Init_LoopBack_SPI_Test();
-    uint8_t tx = 0x55;
+    // Init_LoopBack_SPI_Test();  
+    Init_SPI1(); 
+    uint8_t tx = 0x85;
     uint8_t rx;
     uint8_t txArr[] = {0x55, 0x11, 0x10};
     uint8_t rxArr[3];
+    uint8_t initStatus = 0;
+    uint32_t timeout = 40;
+    Sdcard sdcard1;
+    do {
+        initStatus = init_sdcard(&sdcard1);
+        if (initStatus == 0x01) break;
+        // Delay(10);
+    } while (--timeout);
+    // dataout = init_sdcard();
+    // SD_CardInfo sdcardinfo;
+    // dataout = SD_Init(&sdcardinfo);
 
     while(1){
-        SPI_Transmit_Receive_MultiByte(txArr,3,rxArr,3);
-        rx = spi1_transfer(tx);
-        if(rx == tx) {
+        // SPI_Transmit_Receive_MultiByte(txArr,3,rxArr,3);
+        // dataout = spi1_transfer_single(tx);
+        if(initStatus == 0x01) {
             GPIOC->BSRR |= (GPIO_BSRR_BS13);
             Delay(100);
             GPIOC->BSRR |= (GPIO_BSRR_BR13);
