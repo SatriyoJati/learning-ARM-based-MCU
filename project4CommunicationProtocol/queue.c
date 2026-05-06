@@ -1,22 +1,15 @@
-#define Q_MAX_SIZE (256)
 #include <stdint.h>
 #include "queue.h"
-
-typedef struct Q_T {
-    uint8_t Data[Q_MAX_SIZE];
-    // Index of oldest data element
-    unsigned int Head;
-    // Index of next free space
-    unsigned int Tail;
-    // Number of Elements in use
-    unsigned int Size;
-} ;
+#include "stm32f100xb.h"
+#include "stddef.h"
 
 void Q_Init(Q_T *q)
 {
     unsigned int i;
+    memset((q->Data)->data, 0, Q_MAX_SIZE);
     for (i = 0; i < Q_MAX_SIZE ; i++) {
-        q->Data[i] = 0;
+        memset((q->Data[i]).data, 0, DATA_SIZE);
+        (q->Data[i]).len = 0;
         q->Head = 0;
         q->Tail = 0;
         q->Size = 0;
@@ -39,11 +32,12 @@ int Q_Size(Q_T *q)
 }
 
 
-int Q_Enqueue( Q_T *q , uint8_t d ) {
+int Q_Enqueue( Q_T *q , uint8_t* d, uint16_t len ) {
     uint32_t masking_state;
 
     if (!Q_Full(q)) {
-        q->Data[q->Tail] = d;
+        memcpy(q->Data[q->Tail].data , d, len);
+        q->Data[q->Tail].len = len;
 
         masking_state = __get_PRIMASK();
 
@@ -59,13 +53,13 @@ int Q_Enqueue( Q_T *q , uint8_t d ) {
     }
 }
 
-uint8_t Q_Dequeue(Q_T *q) {
+Data Q_Dequeue(Q_T *q) {
     uint32_t masking_state;
-    uint8_t t = 0;
+    Data t = {0};
 
     if (!Q_Empty(q)) {
         t = q->Data[q->Head];
-        q->Data[q->Head] = '_';
+        // q->Data[q->Head] = ;
 
         masking_state = __get_PRIMASK();
 
