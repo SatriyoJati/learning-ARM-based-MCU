@@ -1,32 +1,20 @@
-/*
-1. Enable the USART by writing the UE bit in USART_CR1 register to 1.
-2. Program the M bit in USART_CR1 to define the word length.
-3. Program the number of stop bits in USART_CR2.
-4. Select DMA enable (DMAT) in USART_CR3 if Multi buffer Communication is to take
-place. Configure the DMA register as explained in multibuffer communication.
-5. Select the desired baud rate using the USART_BRR register.
-6. Set the TE bit in USART_CR1 to send an idle frame as first transmission.
-7. Write the data to send in the USART_DR register (this clears the TXE bit). Repeat this
-for each data to be transmitted in case of single buffer.
-8. After writing the last data into the USART_DR register, wait until TC=1. This indicates
-that the transmission of the last frame is complete. This is required for instance when
-the USART is disabled or enters the Halt mode to avoid corrupting the last
-transmission.
-*/
-#include <stm32f101xb.h>
+#ifndef UART_H
+#define UART_H
+#include "stdint.h"
 
-void uart_transmit() {
-    //enable uart
-    USART1->CR1 |= USART_CR1_UE;
+typedef struct {
+    uint32_t bdrate;
+    uint32_t stopbit;
+    uint32_t datalen;
+    uint8_t initStatus; 
+} Uart;
 
-    // define M bit length
-    // USART1->CR1 |= USART_CR1_M;
-    // left 0 , to choose 1 start bit, 8 data bit, n stop bit
+Uart* UartCreate();
+uint8_t init_uart(Uart *uart, uint32_t bdRate);
+uint8_t uart_transmit(Uart* uart, uint8_t data);
+uint8_t uart_receive(Uart *uart);
+uint8_t uart_transmit_string(Uart* uart, uint32_t* pstr);
+uint8_t uart_receive_string(Uart* uart, uint32_t* pstr);
 
-    // define stop bit
-    // use 1 stop bit 00
-    USART1->CR1 |= USART_CR2_STOP_0;
+#endif //UART_H
 
-    uint32_t baudrate = 9600;
-    uint32_t clock = 400000;
-}
