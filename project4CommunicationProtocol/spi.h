@@ -4,7 +4,7 @@
 #define SPI_HANDLE_H
 
 void Init_LoopBack_SPI_Test();
-
+void Init_SPI1();
 uint8_t spi1_transfer_single(uint8_t data);
 void spi_transfer_multiple(uint8_t* data, uint8_t length);
 void spi_receive_multiple(uint8_t* dataout);
