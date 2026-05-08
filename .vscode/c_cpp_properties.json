@@ -3,7 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/CMSIS/Device/ST/STM32F1xx/Include"
             ],
             "defines": [
                 "_DEBUG",

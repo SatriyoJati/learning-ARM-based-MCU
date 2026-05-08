@@ -81,7 +81,7 @@
             "name": "OpenOCD",
             "cwd": "${workspaceFolder}",
             "type": "cortex-debug",
-            "executable": "project1AccessingGPIO/build/PROJECT_ARM.elf",
+            "executable": "project4CommunicationProtocol/build/PROJECT_ARM.elf",
             "request": "launch",
             "servertype": "openocd",
             "serverpath": "C:/ST/STM32CubeIDE_2.0.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.openocd.win32_2.4.300.202509300731/tools/bin/openocd.exe",
