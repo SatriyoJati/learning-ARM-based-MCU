@@ -22,12 +22,14 @@ message(STATUS "CMAKE_TOOLCHAIN_FILE is: ${CMAKE_TOOLCHAIN_FILE}")
 set(INCS
     ../CMSIS/Device/ST/STM32F1xx/Include
     ../CMSIS/Core/Include
+    ../CMSIS/Include
     clk.h
     queue.h
     spi.h
     uart.h
     sdcard.h
     sdcard_spi.h
+    led.h
 )
 
 set(SRC_FILES   
@@ -38,6 +40,7 @@ set(SRC_FILES
     uart.c
     sdcard.c
     sdcard_spi.c
+    led.c
     ../CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c
     startup_stm32f103xb.s
     )
@@ -57,6 +60,7 @@ target_include_directories(${EXECUTABLE} PRIVATE ${INCS})
 target_compile_options( ${EXECUTABLE} PRIVATE 
     -mcpu=cortex-m3
     -mthumb
+    # -O2
     # -mfpu=fpv4-sp-d16
     # -mfloat-abi=hard
     -specs=nano.specs
@@ -65,7 +69,7 @@ target_compile_options( ${EXECUTABLE} PRIVATE
     -ffunction-sections
 
     -Wall
-    -O0
+    -Og
     -g3
 )
 

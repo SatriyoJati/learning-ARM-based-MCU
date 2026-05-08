@@ -4,6 +4,10 @@
 #include "spi.h"
 #include "sdcard.h"
 #include "sdcard_spi.h"
+#include "queue.h"
+#include "led.h"
+#include "uart.h"
+#include <string.h>
 
 volatile uint32_t mticks = 0;
 
@@ -16,15 +20,6 @@ void Delay(uint32_t ms) {
     while((mticks - start) < ms);
 }
 
-void init_led_gpio() {
-    // 1. Enable Clock for GPIOC (Bit 4 in RCC_APB2ENR)
-    RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
-
-    GPIOC->CRH &= ~(GPIO_CRH_MODE13 | GPIO_CRH_CNF13);
-
-    GPIOC->CRH |= (GPIO_CRH_MODE13_1);
-}
-
 uint8_t checkArray(int rxArr[], int txArr[], int size) {
     for(int i=0; i<3;i++){
         if(rxArr[i] != txArr[i]) {
@@ -34,17 +29,33 @@ uint8_t checkArray(int rxArr[], int txArr[], int size) {
     return 1;
 }
 
+void HardFault_Handler() {
+    uint32_t active_irq  = SCB->ICSR & 0x1FF;  // bits[8:0] = active exception number
+    // Subtract 16 to get the peripheral IRQ number
+    // e.g. active_irq=22 → IRQ #6 → TIM1_UP_IRQn on STM32F103
+
+    uint32_t ipending0 = NVIC->ISPR[0]; // pending IRQs  0-31
+    uint32_t ipending1 = NVIC->ISPR[1]; // pending IRQs 32-63
+    uint32_t iactive0  = NVIC->IABR[0]; // active IRQs   0-31
+    uint32_t iactive1  = NVIC->IABR[1]; // active IRQs  32-63
+}
+
 int main() {
     CLK_Init();
     SystemCoreClockUpdate();
     SysTick_Config(SystemCoreClock/1000);
-    init_led_gpio();
-    // Init_LoopBack_SPI_Test();  
     Init_SPI1(); 
-    uint8_t tx = 0x85;
-    uint8_t rx;
-    uint8_t txArr[] = {0x55, 0x11, 0x10};
-    uint8_t rxArr[3];
+    Uart* uartInstance = NULL;
+    uartInstance =  UartCreate();
+    if (uartInstance != NULL){
+        init_uart(uartInstance, (uint32_t)115200);
+        uart_transmit_string(uartInstance,"UART RESET");
+        uart_transmit(uartInstance, '\n');
+        uart_transmit(uartInstance, '\r');
+    }
+    Led* led = LedCreate();
+    if(led != NULL)
+        init_led_gpio(led,PORTC,OUTPUT_PUSHPULL);
     uint8_t initStatus = 0;
     uint32_t timeout = 40;
     Sdcard sdcard1;
@@ -53,24 +64,91 @@ int main() {
         if (initStatus == 0x01) break;
         // Delay(10);
     } while (--timeout);
-    // dataout = init_sdcard();
-    // SD_CardInfo sdcardinfo;
-    // dataout = SD_Init(&sdcardinfo);
 
+    uint8_t buff[512] = {};
+    memset(buff, 0x0, sizeof(buff));
+
+    Q_T sdcardQueue;
+    Q_Init(&sdcardQueue);
+
+    // dummy data to write
+    char dummy[] = "hello, world";
+    char step[] = "indian speed";
+    Data temp; 
+    uint8_t read_res;
+    uint8_t count_error=0;
     while(1){
-        // SPI_Transmit_Receive_MultiByte(txArr,3,rxArr,3);
-        // dataout = spi1_transfer_single(tx);
         if(initStatus == 0x01) {
-            GPIOC->BSRR |= (GPIO_BSRR_BS13);
-            Delay(100);
-            GPIOC->BSRR |= (GPIO_BSRR_BR13);
-            Delay(100);
-        } else {
-            GPIOC->BSRR |= (GPIO_BSRR_BS13);
-            Delay(1000);
-            GPIOC->BSRR |= (GPIO_BSRR_BR13);
-            Delay(1000);
+            read_res = read_single_block(0x00, &buff);
+            if(read_res != 0) {
+                uart_transmit_string(uartInstance, "Error Read");
+                uart_transmit(uartInstance, '\n');
+                uart_transmit(uartInstance, '\r');
+                memset(buff,0,40);
+                count_error++;
+                if (count_error > 6){
+                    initStatus = init_sdcard(&sdcard1);
+                    count_error = 0;
+                }
+            }
+            if (buff[0] != 0)
+                Q_Enqueue(&sdcardQueue, buff, 40);
+            
+            if(Q_Dequeue(&sdcardQueue, &temp)){
+                for(int i = 0 ; i < 50 ; i++){
+                    uart_transmit(uartInstance, temp.data[i]);
+                }
+            }
+            uart_transmit(uartInstance, '\n');
+            uart_transmit(uartInstance, '\r');
+            if(write_single_block(1024, dummy)){
+                uart_transmit_string(uartInstance, "Error Write");
+                uart_transmit(uartInstance, '\n');
+                uart_transmit(uartInstance, '\r');
+                count_error++;
+                if (count_error > 6){
+                    initStatus = init_sdcard(&sdcard1);
+                    count_error = 0;
+                }
+            }
+            blink_fast(led);
+            read_res = read_single_block(1024, &buff); 
+            if (read_res != 0) {
+                uart_transmit_string(uartInstance, "Error Read");
+                uart_transmit(uartInstance, '\n');
+                uart_transmit(uartInstance, '\r');
+                memset(buff,0,40);
+                count_error++;
+                if (count_error > 6){
+                    initStatus = init_sdcard(&sdcard1);
+                    count_error = 0;
+                }
+            }
+            if (buff[0] != 0)
+                Q_Enqueue(&sdcardQueue, buff, 40);
+            
+            if(Q_Dequeue(&sdcardQueue, &temp)) {
+                for(int i = 0 ; i < 50 ; i++){
+                    uart_transmit(uartInstance, temp.data[i]);
+                }
+            }
 
+            uart_transmit(uartInstance, '\n');
+            uart_transmit(uartInstance, '\r');
+            if(write_single_block(0x00, step)) {
+                uart_transmit_string(uartInstance, "Error Write");
+                uart_transmit(uartInstance, '\n');
+                uart_transmit(uartInstance, '\r');
+                count_error++;
+                if (count_error > 6){
+                    initStatus = init_sdcard(&sdcard1);
+                    count_error = 0;
+                }
+            }
+            blink_fast(led);
+        } else {
+            blink_slow(led);
+            NVIC_SystemReset();
         }
 
     }
