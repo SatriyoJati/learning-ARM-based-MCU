@@ -13,8 +13,8 @@ Uart* UartCreate();
 uint8_t init_uart(Uart *uart, uint32_t bdRate);
 uint8_t uart_transmit(Uart* uart, uint8_t data);
 uint8_t uart_receive(Uart *uart);
-uint8_t uart_transmit_string(Uart* uart, uint32_t* pstr);
-uint8_t uart_receive_string(Uart* uart, uint32_t* pstr);
+uint8_t uart_transmit_string(Uart *uart, uint8_t *pstr);
+uint8_t uart_receive_string(Uart *uart, uint8_t *buff);
 
 #endif //UART_H
 

@@ -205,20 +205,21 @@ uint8_t read_single_block(uint16_t addr, uint8_t *buff) {
     spi_transfer_multiple(CMD17, CMD_LENGTH);
     res = waitR1SuccessInit();
     if (res == 0x0) {
-        for (uint8_t i=0; i < 2 ; i++) {
-            while(++readAttempts != SD_MAX_READ_ATTEMPTS) {
-                if((data = spi1_transfer_single(0xFF)) != 0xFF) break;
-            }
-
-            if (data == 0xFE) {
-                for(uint16_t i = 0 ; i < 512 ; i++) {
-                    *buff++ = spi1_transfer_single(0xFF);
-                }
-                spi1_transfer_single(0xFF);
-                spi1_transfer_single(0xFF);
-            }
+        while(++readAttempts != SD_MAX_READ_ATTEMPTS) {
+            if((data = spi1_transfer_single(0xFF)) != 0xFF) break;
         }
 
+        if (data == 0xFE) {
+            for(uint16_t i = 0 ; i < 512 ; i++) {
+                *buff++ = spi1_transfer_single(0xFF);
+            }
+            spi1_transfer_single(0xFF);
+            spi1_transfer_single(0xFF);
+        } else if ((data & 0x0F)) {
+            res = 2; // DATA ERROR
+        }
+    } else {
+        res = 1; // RESPONSE R1 ERROR
     }
 
     spi1_transfer_single(0xFF);

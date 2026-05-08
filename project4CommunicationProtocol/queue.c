@@ -2,11 +2,12 @@
 #include "queue.h"
 #include "stm32f100xb.h"
 #include "stddef.h"
+#include <string.h>
 
 void Q_Init(Q_T *q)
 {
     unsigned int i;
-    memset((q->Data)->data, 0, Q_MAX_SIZE);
+    // memset((q->Data)->data, 0, Q_MAX_SIZE);
     for (i = 0; i < Q_MAX_SIZE ; i++) {
         memset((q->Data[i]).data, 0, DATA_SIZE);
         (q->Data[i]).len = 0;
@@ -53,12 +54,11 @@ int Q_Enqueue( Q_T *q , uint8_t* d, uint16_t len ) {
     }
 }
 
-Data Q_Dequeue(Q_T *q) {
+int Q_Dequeue(Q_T *q, Data* temp) {
     uint32_t masking_state;
-    Data t = {0};
 
     if (!Q_Empty(q)) {
-        t = q->Data[q->Head];
+        *temp = q->Data[q->Head];
         // q->Data[q->Head] = ;
 
         masking_state = __get_PRIMASK();
@@ -69,7 +69,8 @@ Data Q_Dequeue(Q_T *q) {
         q->Size--;
 
         __set_PRIMASK(masking_state);
+        return 1;
     }
 
-    return t;
+    return 0;
 }

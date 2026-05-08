@@ -7,6 +7,7 @@
 #include "queue.h"
 #include "led.h"
 #include "uart.h"
+#include <string.h>
 
 volatile uint32_t mticks = 0;
 
@@ -46,8 +47,12 @@ int main() {
     Init_SPI1(); 
     Uart* uartInstance = NULL;
     uartInstance =  UartCreate();
-    if (uartInstance != NULL)
+    if (uartInstance != NULL){
         init_uart(uartInstance, (uint32_t)115200);
+        uart_transmit_string(uartInstance,"UART RESET");
+        uart_transmit(uartInstance, '\n');
+        uart_transmit(uartInstance, '\r');
+    }
     Led* led = LedCreate();
     if(led != NULL)
         init_led_gpio(led,PORTC,OUTPUT_PUSHPULL);
@@ -69,33 +74,81 @@ int main() {
     // dummy data to write
     char dummy[] = "hello, world";
     char step[] = "indian speed";
-
+    Data temp; 
+    uint8_t read_res;
+    uint8_t count_error=0;
     while(1){
         if(initStatus == 0x01) {
-            read_single_block(0x00, &buff); 
-            Q_Enqueue(&sdcardQueue, buff, 40);
-            Data temp = Q_Dequeue(&sdcardQueue);
-            for(int i = 0 ; i < 50 ; i++){
-                uart_transmit(uartInstance, temp.data[i]);
+            read_res = read_single_block(0x00, &buff);
+            if(read_res != 0) {
+                uart_transmit_string(uartInstance, "Error Read");
+                uart_transmit(uartInstance, '\n');
+                uart_transmit(uartInstance, '\r');
+                memset(buff,0,40);
+                count_error++;
+                if (count_error > 6){
+                    initStatus = init_sdcard(&sdcard1);
+                    count_error = 0;
+                }
+            }
+            if (buff[0] != 0)
+                Q_Enqueue(&sdcardQueue, buff, 40);
+            
+            if(Q_Dequeue(&sdcardQueue, &temp)){
+                for(int i = 0 ; i < 50 ; i++){
+                    uart_transmit(uartInstance, temp.data[i]);
+                }
             }
             uart_transmit(uartInstance, '\n');
             uart_transmit(uartInstance, '\r');
-            if(!write_single_block(1024, dummy)){
-                blink_fast(led);
+            if(write_single_block(1024, dummy)){
+                uart_transmit_string(uartInstance, "Error Write");
+                uart_transmit(uartInstance, '\n');
+                uart_transmit(uartInstance, '\r');
+                count_error++;
+                if (count_error > 6){
+                    initStatus = init_sdcard(&sdcard1);
+                    count_error = 0;
+                }
             }
-            read_single_block(1024, &buff);
-            Q_Enqueue(&sdcardQueue, buff, 40);
-            temp = Q_Dequeue(&sdcardQueue);
-            for(int i = 0 ; i < 50 ; i++){
-                uart_transmit(uartInstance, temp.data[i]);
+            blink_fast(led);
+            read_res = read_single_block(1024, &buff); 
+            if (read_res != 0) {
+                uart_transmit_string(uartInstance, "Error Read");
+                uart_transmit(uartInstance, '\n');
+                uart_transmit(uartInstance, '\r');
+                memset(buff,0,40);
+                count_error++;
+                if (count_error > 6){
+                    initStatus = init_sdcard(&sdcard1);
+                    count_error = 0;
+                }
             }
+            if (buff[0] != 0)
+                Q_Enqueue(&sdcardQueue, buff, 40);
+            
+            if(Q_Dequeue(&sdcardQueue, &temp)) {
+                for(int i = 0 ; i < 50 ; i++){
+                    uart_transmit(uartInstance, temp.data[i]);
+                }
+            }
+
             uart_transmit(uartInstance, '\n');
             uart_transmit(uartInstance, '\r');
-            if(!write_single_block(0x00, step)) {
-                blink_fast(led);
+            if(write_single_block(0x00, step)) {
+                uart_transmit_string(uartInstance, "Error Write");
+                uart_transmit(uartInstance, '\n');
+                uart_transmit(uartInstance, '\r');
+                count_error++;
+                if (count_error > 6){
+                    initStatus = init_sdcard(&sdcard1);
+                    count_error = 0;
+                }
             }
+            blink_fast(led);
         } else {
             blink_slow(led);
+            NVIC_SystemReset();
         }
 
     }

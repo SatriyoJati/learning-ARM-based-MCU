@@ -90,7 +90,7 @@ uint8_t uart_receive(Uart *uart)
     return (uint8_t) (USART1->DR);
 }
 
-uint8_t uart_transmit_string(Uart *uart, uint32_t *pstr)
+uint8_t uart_transmit_string(Uart *uart, uint8_t *pstr)
 {
     while(*pstr){
         uart_transmit(uart, *pstr);
@@ -100,7 +100,7 @@ uint8_t uart_transmit_string(Uart *uart, uint32_t *pstr)
     return 0;
 }
 
-uint8_t uart_receive_string(Uart *uart, uint32_t *buff)
+uint8_t uart_receive_string(Uart *uart, uint8_t *buff)
 {
     while(*buff){
         *buff = uart_receive(uart);

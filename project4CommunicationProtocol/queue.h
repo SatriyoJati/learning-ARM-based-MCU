@@ -23,7 +23,7 @@ struct Q_T {
 typedef struct Q_T Q_T;
 
 int Q_Enqueue( Q_T *q , uint8_t* d, uint16_t len );
-Data Q_Dequeue(Q_T *q);
+int Q_Dequeue(Q_T *q, Data* temp);
 
 void Q_Init(Q_T *q);
 int Q_Empty(Q_T *q);
