@@ -7,7 +7,9 @@
 #include "queue.h"
 #include "led.h"
 #include "uart.h"
+#include "i2c.h"
 #include <string.h>
+#include "vl53l1x/core/VL53L1X_api.h"
 
 volatile uint32_t mticks = 0;
 
@@ -41,6 +43,13 @@ void HardFault_Handler() {
 }
 
 int main() {
+    //     /* Freeze peripherals when core is halted by debugger */
+    // DBGMCU->CR |= DBGMCU_CR_DBG_IWDG_STOP    /* Freeze IWDG */
+    //            |  DBGMCU_CR_DBG_WWDG_STOP    /* Freeze WWDG */
+    //         //    |  DBGMCU_CR_DBG_TIM1_STOP    /* Freeze TIM1 */
+    //            |  DBGMCU_CR_DBG_TIM2_STOP    /* Freeze TIM2 */
+    //            |  DBGMCU_CR_DBG_TIM3_STOP    /* Freeze TIM3 */
+    //            |  DBGMCU_CR_DBG_TIM4_STOP;   /* Freeze TIM4 */
     CLK_Init();
     SystemCoreClockUpdate();
     SysTick_Config(SystemCoreClock/1000);
@@ -49,7 +58,7 @@ int main() {
     uartInstance =  UartCreate();
     if (uartInstance != NULL){
         init_uart(uartInstance, (uint32_t)115200);
-        uart_transmit_string(uartInstance,"UART RESET");
+        uart_transmit_string(uartInstance,(uint8_t*)"UART RESET");
         uart_transmit(uartInstance, '\n');
         uart_transmit(uartInstance, '\r');
     }
@@ -74,14 +83,19 @@ int main() {
     // dummy data to write
     char dummy[] = "hello, world";
     char step[] = "indian speed";
-    Data temp; 
+    Data temp;
     uint8_t read_res;
     uint8_t count_error=0;
+    uint8_t i2cDataToBeSent = 0x01;
+    I2C_Init(0);
+    VL53L1X_SensorInit((uint16_t)0x29);
+
     while(1){
         if(initStatus == 0x01) {
-            read_res = read_single_block(0x00, &buff);
+            I2C_Write(0x29,&i2cDataToBeSent,1);
+            read_res = read_single_block(0x00, buff);
             if(read_res != 0) {
-                uart_transmit_string(uartInstance, "Error Read");
+                uart_transmit_string(uartInstance, (uint8_t *)"Error Read");
                 uart_transmit(uartInstance, '\n');
                 uart_transmit(uartInstance, '\r');
                 memset(buff,0,40);
@@ -101,8 +115,8 @@ int main() {
             }
             uart_transmit(uartInstance, '\n');
             uart_transmit(uartInstance, '\r');
-            if(write_single_block(1024, dummy)){
-                uart_transmit_string(uartInstance, "Error Write");
+            if(write_single_block(1024, (uint16_t*)dummy)){
+                uart_transmit_string(uartInstance, (uint8_t *) "Error Write");
                 uart_transmit(uartInstance, '\n');
                 uart_transmit(uartInstance, '\r');
                 count_error++;
@@ -112,9 +126,9 @@ int main() {
                 }
             }
             blink_fast(led);
-            read_res = read_single_block(1024, &buff); 
+            read_res = read_single_block(1024, buff); 
             if (read_res != 0) {
-                uart_transmit_string(uartInstance, "Error Read");
+                uart_transmit_string(uartInstance, (uint8_t *) "Error Read");
                 uart_transmit(uartInstance, '\n');
                 uart_transmit(uartInstance, '\r');
                 memset(buff,0,40);
@@ -135,8 +149,8 @@ int main() {
 
             uart_transmit(uartInstance, '\n');
             uart_transmit(uartInstance, '\r');
-            if(write_single_block(0x00, step)) {
-                uart_transmit_string(uartInstance, "Error Write");
+            if(write_single_block(0x00, (uint16_t*)step)) {
+                uart_transmit_string(uartInstance, (uint8_t *) "Error Write");
                 uart_transmit(uartInstance, '\n');
                 uart_transmit(uartInstance, '\r');
                 count_error++;

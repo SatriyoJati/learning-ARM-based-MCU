@@ -30,6 +30,7 @@ set(INCS
     sdcard.h
     sdcard_spi.h
     led.h
+    i2c.h
 )
 
 set(SRC_FILES   
@@ -41,12 +42,16 @@ set(SRC_FILES
     sdcard.c
     sdcard_spi.c
     led.c
+    i2c.c
     ../CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c
     startup_stm32f103xb.s
     )
 
 # Build executable
 add_executable(${EXECUTABLE} ${SRC_FILES})
+
+add_subdirectory(vl53l1x)
+target_link_libraries(${EXECUTABLE} PRIVATE vl53l1x)
 
 target_compile_definitions(${EXECUTABLE} PRIVATE  
     STM32F103xB)
@@ -63,7 +68,7 @@ target_compile_options( ${EXECUTABLE} PRIVATE
     # -O2
     # -mfpu=fpv4-sp-d16
     # -mfloat-abi=hard
-    -specs=nano.specs
+    -specs=nosys.specs
 
     -fdata-sections
     -ffunction-sections
@@ -79,7 +84,7 @@ target_link_options( ${EXECUTABLE} PRIVATE
    -mthumb
 #    -mfpu=fpv4-sp-d16
 #    -mfloat-abi=hard
-    -specs=nano.specs
+    -specs=nosys.specs
     -lc
 #    -lm
     -lnosys
