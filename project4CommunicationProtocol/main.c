@@ -10,6 +10,8 @@
 #include "i2c.h"
 #include <string.h>
 #include "vl53l1x/core/VL53L1X_api.h"
+#include "timer.h"
+#include "vl53l0x_api.h"
 
 volatile uint32_t mticks = 0;
 
@@ -21,6 +23,7 @@ void Delay(uint32_t ms) {
     uint32_t start =   mticks;
     while((mticks - start) < ms);
 }
+
 
 uint8_t checkArray(int rxArr[], int txArr[], int size) {
     for(int i=0; i<3;i++){
@@ -41,21 +44,80 @@ void HardFault_Handler() {
     uint32_t iactive0  = NVIC->IABR[0]; // active IRQs   0-31
     uint32_t iactive1  = NVIC->IABR[1]; // active IRQs  32-63
 }
+VL53L0X_Dev_t       vl53l0x_dev;
+VL53L0X_DEV         Dev = &vl53l0x_dev;
+
+void VL53L0X_Init(Uart* uart) {
+    VL53L0X_Error status = 0;
+    char buf[64];
+    // Set I2C address (default 0x52)
+    Dev->I2cDevAddr = 0x29;
+
+    // Device init
+    status = VL53L0X_DataInit(Dev);
+    sprintf(buf, "Status Data Init = %d\r\n", status);
+    uart_transmit_string(uart,buf);
+
+    status = VL53L0X_StaticInit(Dev);
+    sprintf(buf, "Status StaticInit = %d\r\n", status);
+    uart_transmit_string(uart,buf);
+    uint32_t refSpadCount = 0;
+    uint8_t isApertureSpads = 0;
+    status = VL53L0X_PerformRefSpadManagement(Dev, &refSpadCount, &isApertureSpads);
+    if (status == VL53L0X_ERROR_NONE) {
+    // Successfully updated5
+        uart_transmit_string(uart,"Sucess spad,\n\r");
+    }
+    // One-time calibration (or load saved values)
+    uint8_t VhvSettings = 0, PhaseCal = 0;
+    status = VL53L0X_PerformRefCalibration(Dev, &VhvSettings, &PhaseCal);
+    if (status != VL53L0X_ERROR_NONE) {
+        printf("Calibration API critical error code: %d\n", status);
+    }
+
+    status = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(Dev, 33000); // Set higher, e.g., 50ms (50000)
+
+    status = VL53L0X_SetInterMeasurementPeriodMilliSeconds(Dev, 50); 
+    // Set continuous mode
+    status = VL53L0X_SetDeviceMode(Dev, VL53L0X_DEVICEMODE_CONTINUOUS_RANGING);
+
+
+    // Start measurement
+    status = VL53L0X_StartMeasurement(Dev);
+}
+
+uint16_t VL53L0X_ReadDistance_mm(VL53L0X_RangingMeasurementData_t *measurement) {
+    VL53L0X_Error status;
+    uint8_t dataReady = 0;
+    
+    while (dataReady == 0) {
+        status = VL53L0X_GetMeasurementDataReady(Dev, &dataReady);
+        Delay(2);
+    }
+
+    // Get measurement
+    status = VL53L0X_GetRangingMeasurementData(Dev, measurement);
+
+    status = VL53L0X_ClearInterruptMask(Dev, VL53L0X_REG_SYSTEM_INTERRUPT_GPIO_NEW_SAMPLE_READY);
+
+    if (status == VL53L0X_ERROR_NONE && measurement->RangeStatus == 0) {
+        return measurement->RangeMilliMeter;
+    }
+
+    return 0xFFFF; // error
+}
+
+#define DEV_ADDR 0x29
 
 int main() {
-    //     /* Freeze peripherals when core is halted by debugger */
-    // DBGMCU->CR |= DBGMCU_CR_DBG_IWDG_STOP    /* Freeze IWDG */
-    //            |  DBGMCU_CR_DBG_WWDG_STOP    /* Freeze WWDG */
-    //         //    |  DBGMCU_CR_DBG_TIM1_STOP    /* Freeze TIM1 */
-    //            |  DBGMCU_CR_DBG_TIM2_STOP    /* Freeze TIM2 */
-    //            |  DBGMCU_CR_DBG_TIM3_STOP    /* Freeze TIM3 */
-    //            |  DBGMCU_CR_DBG_TIM4_STOP;   /* Freeze TIM4 */
     CLK_Init();
     SystemCoreClockUpdate();
     SysTick_Config(SystemCoreClock/1000);
+    TIM2_Init();
     Init_SPI1(); 
     Uart* uartInstance = NULL;
     uartInstance =  UartCreate();
+    
     if (uartInstance != NULL){
         init_uart(uartInstance, (uint32_t)115200);
         uart_transmit_string(uartInstance,(uint8_t*)"UART RESET");
@@ -86,18 +148,43 @@ int main() {
     Data temp;
     uint8_t read_res;
     uint8_t count_error=0;
-    uint8_t i2cDataToBeSent = 0x01;
-    I2C_Init(0);
-    VL53L1X_SensorInit((uint16_t)0x29);
+
+    I2C_Init(1);
+    uint8_t buf[2] = {0x01, 0x0F};
+    uint8_t booted = 0;
+
+    uint8_t byte = 0;
+
+    VL53L0X_Init(&uartInstance);
+    VL53L0X_RdByte(Dev, VL53L0X_REG_IDENTIFICATION_MODEL_ID, &byte);
+    uart_print_hex(uartInstance, "data", byte);
+
+    uint8_t ping = 0;
+
+    uint8_t  dataReady = 0;
+    uint8_t  rangeStatus;
+    uint16_t distance_mm;
+    VL53L0X_RangingMeasurementData_t measurement;
 
     while(1){
+        char uart_buf[30]; 
         if(initStatus == 0x01) {
-            I2C_Write(0x29,&i2cDataToBeSent,1);
+            uint16_t distance_mm = VL53L0X_ReadDistance_mm(&measurement);
+            int len = snprintf(uart_buf, sizeof(uart_buf), "Distance: %u mm\r\n", distance_mm);
+            uart_transmit_string(uartInstance, &uart_buf);
+            snprintf(uart_buf, sizeof(uart_buf), "Range Status: %u \r\n", measurement.RangeStatus);
+            uart_transmit_string(uartInstance, &uart_buf);
+
+            uint8_t int_status;
+            VL53L0X_RdByte(Dev, VL53L0X_REG_RESULT_INTERRUPT_STATUS, &int_status);
+            uart_print_hex(uartInstance, "IntStatus after clear: ", int_status);
+            uint16_t sensorId = 0;
+            VL53L1X_GetSensorId(DEV_ADDR, &sensorId);
+
+
             read_res = read_single_block(0x00, buff);
             if(read_res != 0) {
-                uart_transmit_string(uartInstance, (uint8_t *)"Error Read");
-                uart_transmit(uartInstance, '\n');
-                uart_transmit(uartInstance, '\r');
+                uart_transmit_string(uartInstance, (uint8_t *)"Error Read\n\r");
                 memset(buff,0,40);
                 count_error++;
                 if (count_error > 6){
@@ -116,9 +203,7 @@ int main() {
             uart_transmit(uartInstance, '\n');
             uart_transmit(uartInstance, '\r');
             if(write_single_block(1024, (uint16_t*)dummy)){
-                uart_transmit_string(uartInstance, (uint8_t *) "Error Write");
-                uart_transmit(uartInstance, '\n');
-                uart_transmit(uartInstance, '\r');
+                uart_transmit_string(uartInstance, (uint8_t *) "Error Write\n\r");
                 count_error++;
                 if (count_error > 6){
                     initStatus = init_sdcard(&sdcard1);
@@ -128,9 +213,7 @@ int main() {
             blink_fast(led);
             read_res = read_single_block(1024, buff); 
             if (read_res != 0) {
-                uart_transmit_string(uartInstance, (uint8_t *) "Error Read");
-                uart_transmit(uartInstance, '\n');
-                uart_transmit(uartInstance, '\r');
+                uart_transmit_string(uartInstance, (uint8_t *) "Error Read\n\r");
                 memset(buff,0,40);
                 count_error++;
                 if (count_error > 6){
@@ -150,9 +233,7 @@ int main() {
             uart_transmit(uartInstance, '\n');
             uart_transmit(uartInstance, '\r');
             if(write_single_block(0x00, (uint16_t*)step)) {
-                uart_transmit_string(uartInstance, (uint8_t *) "Error Write");
-                uart_transmit(uartInstance, '\n');
-                uart_transmit(uartInstance, '\r');
+                uart_transmit_string(uartInstance, (uint8_t *) "Error Write\n\r");
                 count_error++;
                 if (count_error > 6){
                     initStatus = init_sdcard(&sdcard1);
@@ -162,6 +243,7 @@ int main() {
             blink_fast(led);
         } else {
             blink_slow(led);
+            VL53L1X_StopRanging(DEV_ADDR);
             NVIC_SystemReset();
         }
 

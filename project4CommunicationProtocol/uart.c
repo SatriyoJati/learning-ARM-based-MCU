@@ -108,3 +108,45 @@ uint8_t uart_receive_string(Uart *uart, uint8_t *buff)
     }
     return 0;
 }
+
+void uart_print_hex(Uart *uart, const char *label, uint8_t value)
+{
+    const char hex[] = "0123456789ABCDEF";
+
+    // Print label
+    while (*label) {
+        uart_transmit(uart, *label++);
+    }
+
+    // Print "0x"
+    uart_transmit(uart, '0');
+    uart_transmit(uart, 'x');
+
+    // Print high nibble then low nibble
+    uart_transmit(uart, hex[(value >> 4) & 0x0F]);
+    uart_transmit(uart, hex[value & 0x0F]);
+
+    // Newline
+    uart_transmit(uart, '\r');
+    uart_transmit(uart, '\n');
+}
+
+void uart_print_hex32(Uart *uart, const char *label, uint32_t value)
+{
+    const char hex[] = "0123456789ABCDEF";
+
+    while (*label) uart_transmit(uart, *label++);
+
+    uart_transmit(uart, '0');
+    uart_transmit(uart, 'x');
+
+    // 8 hex digits for 32-bit
+    for (int i = 28; i >= 0; i -= 4) {
+        uart_transmit(uart, hex[(value >> i) & 0x0F]);
+    }
+
+    uart_transmit(uart, '\r');
+    uart_transmit(uart, '\n');
+}
+
+

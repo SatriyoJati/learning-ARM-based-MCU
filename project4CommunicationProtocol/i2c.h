@@ -13,7 +13,10 @@ uint8_t I2C_Write_Address(uint8_t devAddr, uint8_t isRead);
 
 uint8_t I2C_Write(uint8_t devAddr, uint8_t *data, uint16_t len);
 
-uint8_t I2C_Read(uint8_t devAddr, uint8_t *buf, uint16_t len);
+uint8_t I2C_Write_NoStop(uint8_t devAddr, uint8_t *data, uint16_t len);
 
+uint8_t I2C_Read(uint8_t devAddr, uint16_t index,  uint8_t *buf,  uint16_t len);
+
+void I2C_RepeatStart(void);
 
 #endif /* I2C_H*/

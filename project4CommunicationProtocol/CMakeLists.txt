@@ -23,14 +23,7 @@ set(INCS
     ../CMSIS/Device/ST/STM32F1xx/Include
     ../CMSIS/Core/Include
     ../CMSIS/Include
-    clk.h
-    queue.h
-    spi.h
-    uart.h
-    sdcard.h
-    sdcard_spi.h
-    led.h
-    i2c.h
+    ${CMAKE_CURRENT_SOURCE_DIR} 
 )
 
 set(SRC_FILES   
@@ -43,6 +36,7 @@ set(SRC_FILES
     sdcard_spi.c
     led.c
     i2c.c
+    timer.c
     ../CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c
     startup_stm32f103xb.s
     )
@@ -51,7 +45,9 @@ set(SRC_FILES
 add_executable(${EXECUTABLE} ${SRC_FILES})
 
 add_subdirectory(vl53l1x)
+add_subdirectory(vl53l0x)
 target_link_libraries(${EXECUTABLE} PRIVATE vl53l1x)
+target_link_libraries(${EXECUTABLE} PRIVATE vl53l0x)
 
 target_compile_definitions(${EXECUTABLE} PRIVATE  
     STM32F103xB)
@@ -61,6 +57,22 @@ target_include_directories(${EXECUTABLE} PRIVATE ${INCS})
 # List of compiler defines, prefix with -D compiler
 #target_compile_definitions( ${EXECUTABLE} PRIVATE )
 
+add_library(cpu_flags INTERFACE)
+target_compile_options( cpu_flags INTERFACE 
+    -mcpu=cortex-m3
+    -mthumb
+    # -O2
+    # -mfpu=fpv4-sp-d16
+    # -mfloat-abi=hard
+    -specs=nosys.specs
+
+    -fdata-sections
+    -ffunction-sections
+
+    -Wall
+    -O0
+    -g3
+)
 
 target_compile_options( ${EXECUTABLE} PRIVATE 
     -mcpu=cortex-m3
@@ -74,7 +86,7 @@ target_compile_options( ${EXECUTABLE} PRIVATE
     -ffunction-sections
 
     -Wall
-    -Og
+    -O0
     -g3
 )
 

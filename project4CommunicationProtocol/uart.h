@@ -15,6 +15,7 @@ uint8_t uart_transmit(Uart* uart, uint8_t data);
 uint8_t uart_receive(Uart *uart);
 uint8_t uart_transmit_string(Uart *uart, uint8_t *pstr);
 uint8_t uart_receive_string(Uart *uart, uint8_t *buff);
+void uart_print_hex(Uart *uart, const char *label, uint8_t value);
 
 #endif //UART_H
 
